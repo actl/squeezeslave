@@ -1,0 +1,71 @@
+# Linux 2.6 ALSA via libportaudio and display
+
+TOP_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+SYSROOT_BASE=$(TOP_DIR)/sysroots
+TARGET_ARCH=arm
+CC=arm-poky-linux-gnueabi-gcc -march=armv5te -mtune=arm926ej-s --sysroot=$(SYSROOT_BASE)/at91sam9g20ewon3
+RANLIB="arm-poky-linux-gnueabi-ranlib"
+AR="arm-poky-linux-gnueabi-ar"
+
+
+OS=lnx26
+CC=arm-poky-linux-gnueabi-gcc -march=armv7-a -mthumb-interwork -mfloat-abi=softfp -mfpu=neon --sysroot=$(SYSROOT_BASE)/olinuxino-a10s
+CXX=arm-poky-linux-gnueabi-g++ -march=armv7-a -mthumb-interwork -mfloat-abi=softfp -mfpu=neon --sysroot=$(SYSROOT_BASE)/olinuxino-a10s
+TAR=tar
+SED=sed
+SHELL=/bin/bash
+PATCH=patch
+CFLAGS=-DRENICE -DSLIMPROTO_DEBUG -DDAEMONIZE -DUSE_SIGNALS_FOR_RESTART -DPORTAUDIO_DEV -Wall -O2
+LDFLAGS=-s
+LIBS=lib/libslimproto.a lib/libgetopt.a
+
+# Comment out these two lines to remove display support
+#CFLAGS+=-DINTERACTIVE
+#LIBS+=-lcurses -llirc_client
+
+INCLUDE=-Ilib/getopt -Ilib/portmixer/px_common -Isrc
+
+PORTMIXERFILES:=lib/portmixer/px_none/px_none.c
+
+GETOPTFILES=lib/getopt/getopt.c lib/getopt/getopt1.c
+
+SLIMPROTOFILES:=src/slimaudio/slimaudio_http.c src/slimaudio/slimaudio_decoder.c src/slimaudio/slimaudio_decoder_flac.c src/slimaudio/slimaudio_decoder_mad.c src/slimaudio/slimaudio_decoder_vorbis.c src/slimaudio/slimaudio_decoder_pcm.c src/slimaudio/slimaudio_output.c src/slimaudio/slimaudio_buffer.c src/slimaudio/slimaudio.c src/slimproto/slimproto.c
+
+SQUEEZESLAVEFILES:=src/squeezeslave/squeezeslave.c src/squeezeslave/help.c src/squeezeslave/daemonize.c src/squeezeslave/interactive.c
+
+LIBSLIMPROTO=lib/libslimproto.a
+
+LIBGETOPT=lib/libgetopt.a
+
+SUPPORTLIBS=lib/libportaudio/$(OS)/lib/libportaudio.a lib/libmad/$(OS)/lib/libmad.a lib/vorbis/$(OS)/lib/libvorbisfile.a lib/vorbis/$(OS)/lib/libvorbis.a lib/vorbis/$(OS)/lib/libvorbisenc.a lib/vorbis/$(OS)/lib/libogg.a lib/flac/$(OS)/lib/libFLAC.a
+
+SQUEEZESLAVE=bin/squeezeslave
+
+.c.o:
+	$(CC) $(CFLAGS) -c $(INCLUDE) $< -o $*.o
+
+all: $(SQUEEZESLAVE)
+
+$(LIBSLIMPROTO): $(SLIMPROTOFILES:.c=.o)
+	$(AR) cru $(LIBSLIMPROTO) $^
+	$(RANLIB) $(LIBSLIMPROTO)
+
+$(LIBGETOPT): $(GETOPTFILES:.c=.o)
+	$(AR) cru $(LIBGETOPT) $^
+	$(RANLIB) $(LIBGETOPT)
+
+$(SQUEEZESLAVE): $(SQUEEZESLAVEFILES:.c=.o) $(PORTMIXERFILES:.c=.o) $(LIBSLIMPROTO) $(LIBGETOPT)
+	$(CC) $(LDFLAGS) -o $(SQUEEZESLAVE) $^ -lasound -lrt -lpthread -lm \
+	-lvorbis -lvorbisenc -lvorbisfile -lmad -lFLAC -logg -lportaudio \
+	$(LIBS)
+
+clean:
+	-@rm -f $(SLIMPROTOFILES:.c=.o)
+	-@rm -f $(SQUEEZESLAVEFILES:.c=.o)
+	-@rm -f $(PORTMIXERFILES:.c=.o)
+	-@rm -f $(GETOPTFILES:.c=.o)
+	-@rm -f $(LIBSLIMPROTO)
+	-@rm -f $(LIBGETOPT)
+	-@rm -f $(SQUEEZESLAVE)
+
+
