@@ -1,22 +1,5 @@
 # Linux 2.6 ALSA via libportaudio and display
 
-TOP_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
-SYSROOT_BASE=$(TOP_DIR)/sysroots
-TARGET_ARCH=arm
-CC=arm-poky-linux-gnueabi-gcc -march=armv5te -mtune=arm926ej-s --sysroot=$(SYSROOT_BASE)/at91sam9g20ewon3
-RANLIB="arm-poky-linux-gnueabi-ranlib"
-AR="arm-poky-linux-gnueabi-ar"
-
-
-OS=lnx26
-CC=arm-poky-linux-gnueabi-gcc -march=armv7-a -mthumb-interwork -mfloat-abi=softfp -mfpu=neon --sysroot=$(SYSROOT_BASE)/olinuxino-a10s
-CXX=arm-poky-linux-gnueabi-g++ -march=armv7-a -mthumb-interwork -mfloat-abi=softfp -mfpu=neon --sysroot=$(SYSROOT_BASE)/olinuxino-a10s
-TAR=tar
-SED=sed
-SHELL=/bin/bash
-PATCH=patch
-CFLAGS=-DRENICE -DSLIMPROTO_DEBUG -DDAEMONIZE -DUSE_SIGNALS_FOR_RESTART -DPORTAUDIO_DEV -Wall -O2
-LDFLAGS=-s
 LIBS=lib/libslimproto.a lib/libgetopt.a
 
 # Comment out these two lines to remove display support
@@ -37,9 +20,7 @@ LIBSLIMPROTO=lib/libslimproto.a
 
 LIBGETOPT=lib/libgetopt.a
 
-SUPPORTLIBS=lib/libportaudio/$(OS)/lib/libportaudio.a lib/libmad/$(OS)/lib/libmad.a lib/vorbis/$(OS)/lib/libvorbisfile.a lib/vorbis/$(OS)/lib/libvorbis.a lib/vorbis/$(OS)/lib/libvorbisenc.a lib/vorbis/$(OS)/lib/libogg.a lib/flac/$(OS)/lib/libFLAC.a
-
-SQUEEZESLAVE=bin/squeezeslave
+SQUEEZESLAVE=squeezeslave
 
 .c.o:
 	$(CC) $(CFLAGS) -c $(INCLUDE) $< -o $*.o
